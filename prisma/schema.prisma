@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                      String   @id @default (cuid())
+  name                    String
+  email                   String   @unique
+  password                String
+  resetPassword           String?
+  resetPasswordTokenExpiry DateTime?
+  emailVerified           Boolean  @default(false)
+  emailVerificationToken  String? 
+  isAdmin                 Boolean  @default(false)
+  orders  Order[]
+  shippingAddress ShippingAddress[]
+  createdAt               DateTime @default(now()) @db.Timestamp(6)
+}
+
+model Product {
+  id          String   @id @default(cuid()) @map("_id")
+  name        String
+  slug        String   @unique
+  image       String
+  banner      String?
+  categoryId  String
+  price       Int
+  brand       String
+  description String
+  rating      Int    @default(0)
+  numReviews  Int      @default(0)
+  countInStock Int     @default(0)
+  colors      String[] // Array warna, bisa diubah sesuai kebutuhan
+  sizes       String[] // Array ukuran, bisa diubah sesuai kebutuhan
+  isFeatured  Boolean  @default(false)
+  categoryItems  Category @relation(fields: [categoryId], references: [id])
+  itemOrder  OrderItem[]
+  viewProduct ViewProduct[]
+  createdAt   DateTime @default(now()) // Timestamps otomatis Prisma
+  updatedAt   DateTime @updatedAt // Timestamps otomatis untuk pembaruan
+}
+
+model Category {
+  id         String   @id @default(cuid()) @map("_id")
+  name String
+  image String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  product Product[]
+}
+
+model Order {
+  id            String      @id @default(cuid()) @map("_id")
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  orderItemId   String
+  orderItem      OrderItem    @relation(fields: [orderItemId], references: [id])
+  shippingAddressId   String
+  shippingAddress     ShippingAddress    @relation(fields: [shippingAddressId], references: [id])
+  paymentMethod  String
+  paymentResultId   String
+  paymentResult     PaymentResult    @relation(fields: [paymentResultId], references: [id])
+  itemsPrice     Float
+  shippingPrice  Int
+  taxPrice       Int
+  totalPrice     Int
+  isPaid         Boolean     @default(false)
+  isDelivered    Boolean     @default(false)
+  paidAt         DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime    @default(now())
+
+  // Timestamps are handled automatically in Prisma
+}
+
+model OrderItem {
+  id          String  @id @default(cuid()) @map("_id")
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  name        String
+  slug        String
+  qty         Int
+  image       String
+  price       Int
+  color       String?
+  size        String?
+  order Order[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+}
+
+model ShippingAddress {
+  id        String @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  fullName  String
+  address   String
+  city      String
+  postalCode String
+  country   String
+  order Order[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+}
+
+model PaymentResult {
+  id          String @id @default(cuid())
+  idPayment String
+  status      String
+  emailAddress String
+  order       Order[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+}
+
+model Subscribe {
+  id        String @id @default(cuid())
+  email  String @unique
+  createdAt      DateTime    @default(now())
+}
+
+model ViewProduct {
+  id        String @id @default(cuid())
+  productId  String @unique
+  view       Int
+  product       Product @relation(fields: [productId], references: [id])
+  createdAt      DateTime    @default(now())
+}
+
+model Saran {
+  id        String @id @default(cuid())
+  message  String
+  createdAt      DateTime    @default(now())
+}
